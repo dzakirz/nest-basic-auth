@@ -77,4 +77,32 @@ export class AuthService {
 
     throw new UnauthorizedException('Invalid credentials');
   }
+
+  async me(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: id },
+    });
+
+    const { password, ...result } = user;
+
+    return result;
+  }
+
+  async refresh(user: any) {
+    const payload = {
+      username: user.email,
+      sub: user.id,
+    };
+
+    return {
+      access_token: await this.jwtService.signAsync(payload, {
+        expiresIn: '1h',
+        secret: process.env.JWT_SECRET,
+      }),
+      refresh_token: await this.jwtService.signAsync(payload, {
+        expiresIn: '7d',
+        secret: process.env.JWT_REFRESH_TOKEN,
+      }),
+    };
+  }
 }
